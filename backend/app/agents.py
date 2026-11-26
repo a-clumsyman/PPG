@@ -5,7 +5,7 @@ from functools import lru_cache
 
 from langchain.agents import create_agent
 
-from .ai import get_chat
+from .ai import get_chat, text_of
 from .agent_tools import CITIZEN_TOOLS, MP_TOOLS
 from .db import conversations, messages, now, oid
 from .config import settings
@@ -95,8 +95,8 @@ def _save_message(conv_id, role: str, content: str) -> None:
 
 def _final_answer(result_messages) -> str:
     for m in reversed(result_messages):
-        if getattr(m, "type", None) == "ai" and (m.content or "").strip():
-            return m.content.strip()
+        if getattr(m, "type", None) == "ai" and text_of(m.content):
+            return text_of(m.content)
     return ""
 
 
