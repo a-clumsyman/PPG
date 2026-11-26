@@ -13,12 +13,13 @@ import {
 } from "recharts";
 import { Badge, Button, Card, SectionTitle, Stat, urgencyTone } from "@/components/ui";
 import type { HeatPoint } from "@/components/HeatMap";
+import { catLabel, trendLabel, urgLabel, useLanguage, useT } from "@/lib/i18n";
 
 const HeatMap = dynamic(() => import("@/components/HeatMap"), {
   ssr: false,
   loading: () => (
     <div className="grid h-[420px] place-items-center rounded-xl border border-slate-200 text-sm text-slate-400">
-      Loading map...
+      ...
     </div>
   ),
 });
@@ -44,6 +45,8 @@ interface DashboardData {
 }
 
 export default function MpDashboardPage() {
+  const t = useT();
+  const { lang } = useLanguage();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [reportBusy, setReportBusy] = useState(false);
@@ -74,36 +77,46 @@ export default function MpDashboardPage() {
     setReportBusy(false);
   }
 
-  if (loading || !data) return <Card>Loading dashboard...</Card>;
+  if (loading || !data) return <Card>{t("dash.loading")}</Card>;
 
   const totalSubs = data.category_breakdown.reduce(
     (s, c) => s + c.submissions,
     0
   );
 
+  const catBreakdown = data.category_breakdown.map((c) => ({
+    ...c,
+    category: catLabel(lang, c.category),
+  }));
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">MP Dashboard</h1>
-          <p className="text-sm text-slate-500">
-            Constituency: Visakhapatnam · this week
-          </p>
+          <h1 className="text-2xl font-bold text-slate-900">{t("dash.title")}</h1>
+          <p className="text-sm text-slate-500">{t("dash.subtitle")}</p>
         </div>
         <Button onClick={generateReport} disabled={reportBusy}>
-          {reportBusy ? "Generating..." : "Generate weekly report"}
+          {reportBusy ? t("dash.generating") : t("dash.genReport")}
         </Button>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-4">
-        <Stat label="Total submissions" value={totalSubs} />
-        <Stat label="Active clusters" value={data.category_breakdown.length ? data.priorities.length + data.rising.length : 0} />
-        <Stat label="Top priority" value={data.priorities[0]?.priority_score ?? "-"} hint={data.priorities[0]?.title} />
-        <Stat label="Urgent & unverified" value={data.unverified_urgent.length} />
+        <Stat label={t("dash.stat.total")} value={totalSubs} />
+        <Stat
+          label={t("dash.stat.clusters")}
+          value={data.category_breakdown.length ? data.priorities.length + data.rising.length : 0}
+        />
+        <Stat
+          label={t("dash.stat.top")}
+          value={data.priorities[0]?.priority_score ?? "-"}
+          hint={data.priorities[0]?.title}
+        />
+        <Stat label={t("dash.stat.urgent")} value={data.unverified_urgent.length} />
       </div>
 
       <div>
-        <SectionTitle title="Top 5 priority issues" subtitle="Ranked by explainable priority score" />
+        <SectionTitle title={t("dash.top5")} subtitle={t("dash.top5Sub")} />
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
           {data.priorities.map((p) => (
             <Card key={p.cluster_id}>
@@ -114,12 +127,12 @@ export default function MpDashboardPage() {
                 <Badge tone="purple">{p.priority_score}</Badge>
               </div>
               <div className="mt-1 flex flex-wrap items-center gap-1">
-                <Badge tone="blue">{p.category}</Badge>
-                <Badge tone={urgencyTone(p.urgency)}>{p.urgency}</Badge>
-                <Badge tone="gray">{p.trend}</Badge>
+                <Badge tone="blue">{catLabel(lang, p.category)}</Badge>
+                <Badge tone={urgencyTone(p.urgency)}>{urgLabel(lang, p.urgency)}</Badge>
+                <Badge tone="gray">{trendLabel(lang, p.trend)}</Badge>
               </div>
               <div className="mt-2 text-xs text-slate-500">
-                {p.submission_count} submissions · {p.location}
+                {p.submission_count} {t("scene.submissions")} · {p.location}
               </div>
               <p className="mt-2 text-xs text-slate-500">{p.reason}</p>
             </Card>
@@ -129,9 +142,9 @@ export default function MpDashboardPage() {
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
-          <SectionTitle title="Issue category breakdown" />
+          <SectionTitle title={t("dash.catBreak")} />
           <ResponsiveContainer width="100%" height={260}>
-            <BarChart data={data.category_breakdown}>
+            <BarChart data={catBreakdown}>
               <CartesianGrid strokeDasharray="3 3" stroke="#eef2f7" />
               <XAxis dataKey="category" tick={{ fontSize: 11 }} />
               <YAxis tick={{ fontSize: 11 }} />
@@ -142,7 +155,7 @@ export default function MpDashboardPage() {
         </Card>
 
         <Card>
-          <SectionTitle title="Location hotspots" />
+          <SectionTitle title={t("dash.hotspots")} />
           <ResponsiveContainer width="100%" height={260}>
             <BarChart data={data.hotspots} layout="vertical">
               <CartesianGrid strokeDasharray="3 3" stroke="#eef2f7" />
@@ -161,13 +174,13 @@ export default function MpDashboardPage() {
       </div>
 
       <div>
-        <SectionTitle title="Issue heatmap" subtitle="Concentration of submissions across the constituency" />
+        <SectionTitle title={t("dash.heatmap")} subtitle={t("dash.heatmapSub")} />
         <HeatMap points={data.map_points} />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
-          <SectionTitle title="Rising issues" />
+          <SectionTitle title={t("dash.rising")} />
           <div className="space-y-2">
             {data.rising.map((r) => (
               <div
@@ -175,13 +188,15 @@ export default function MpDashboardPage() {
                 className="flex items-center justify-between text-sm"
               >
                 <span className="text-slate-700">{r.title}</span>
-                <Badge tone="amber">score {r.priority_score}</Badge>
+                <Badge tone="amber">
+                  {t("scene.score", { n: r.priority_score })}
+                </Badge>
               </div>
             ))}
           </div>
         </Card>
         <Card>
-          <SectionTitle title="Unverified urgent issues" subtitle="Need staff verification first" />
+          <SectionTitle title={t("dash.unverified")} subtitle={t("dash.unverifiedSub")} />
           <div className="space-y-2">
             {data.unverified_urgent.map((r) => (
               <div
@@ -190,13 +205,13 @@ export default function MpDashboardPage() {
               >
                 <span className="text-slate-700">{r.title}</span>
                 <div className="flex gap-1">
-                  <Badge tone={urgencyTone(r.urgency)}>{r.urgency}</Badge>
-                  <Badge tone="red">unverified</Badge>
+                  <Badge tone={urgencyTone(r.urgency)}>{urgLabel(lang, r.urgency)}</Badge>
+                  <Badge tone="red">{t("dash.unverifiedBadge")}</Badge>
                 </div>
               </div>
             ))}
             {!data.unverified_urgent.length && (
-              <p className="text-xs text-slate-400">None right now.</p>
+              <p className="text-xs text-slate-400">{t("dash.none")}</p>
             )}
           </div>
         </Card>
@@ -217,10 +232,7 @@ export default function MpDashboardPage() {
               </div>
             ))}
           </div>
-          <p className="mt-3 text-xs text-slate-400">
-            Population figures are public baseline estimates. Some clusters are
-            AI-grouped and not yet staff-verified.
-          </p>
+          <p className="mt-3 text-xs text-slate-400">{t("dash.reportNote")}</p>
         </Card>
       )}
     </div>
