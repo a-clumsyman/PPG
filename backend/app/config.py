@@ -29,6 +29,12 @@ class Settings(BaseSettings):
     hf_base_url: str = "https://router.huggingface.co/v1"
     chat_model: str = "openai/gpt-oss-120b:groq"
 
+    # ---- Gemini (free tier). When gemini_api_key is set it replaces the HF route. ----
+    gemini_api_key: str = ""
+    gemini_base_url: str = "https://generativelanguage.googleapis.com/v1beta/openai/"
+    gemini_chat_model: str = "gemini-2.5-flash"
+    gemini_embedding_model: str = "gemini-embedding-001"
+
     # ---- Embeddings: Hugging Face hosted Inference API (feature-extraction) ----
     # multilingual-e5-large outputs 1024-dim vectors (matches the Atlas indexes)
     # and covers English/Telugu/Hindi. Requires "query:"/"passage:" prefixes.
