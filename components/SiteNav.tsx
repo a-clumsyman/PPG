@@ -1,14 +1,19 @@
-import Link from "next/link";
+"use client";
 
-const links = [
-  { href: "/citizen", label: "Citizen Chat" },
-  { href: "/staff", label: "Staff Console" },
-  { href: "/mp/chat", label: "MP Chat" },
-  { href: "/mp/dashboard", label: "MP Dashboard" },
-  { href: "/public/issues", label: "Public Issues" },
-];
+import Link from "next/link";
+import { LanguageToggle } from "./LanguageToggle";
+import { useT } from "@/lib/i18n";
 
 export function SiteNav() {
+  const t = useT();
+  const links = [
+    { href: "/citizen", label: t("nav.citizen") },
+    { href: "/staff", label: t("nav.staff") },
+    { href: "/officer", label: t("nav.officer") },
+    { href: "/mp/chat", label: t("nav.mpChat") },
+    { href: "/mp/dashboard", label: t("nav.mpDash") },
+    { href: "/public/issues", label: t("nav.public") },
+  ];
   return (
     <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/90 backdrop-blur">
       <div className="mx-auto flex w-full max-w-7xl items-center gap-6 px-4 py-3">
@@ -17,7 +22,7 @@ export function SiteNav() {
             PP
           </span>
           <span className="text-sm font-semibold text-slate-900">
-            People&apos;s Priorities
+            {t("app.name")}
           </span>
         </Link>
         <nav className="flex flex-wrap items-center gap-1 text-sm">
@@ -31,6 +36,7 @@ export function SiteNav() {
             </Link>
           ))}
         </nav>
+        <LanguageToggle />
       </div>
     </header>
   );
