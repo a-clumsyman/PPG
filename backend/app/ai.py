@@ -21,6 +21,17 @@ from .db import issue_clusters, guidance_resources
 # ---------------------------------------------------------------------------
 
 
+def text_of(content) -> str:
+    """Plain text of a model reply (Gemini returns a list of content blocks)."""
+    if isinstance(content, list):
+        return "".join(
+            b if isinstance(b, str) else (b.get("text") or "")
+            for b in content
+            if isinstance(b, (str, dict))
+        ).strip()
+    return (content or "").strip()
+
+
 @lru_cache
 def get_chat() -> ChatOpenAI:
     if settings.gemini_api_key:
