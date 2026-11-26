@@ -24,12 +24,14 @@ from .db import issue_clusters, guidance_resources
 @lru_cache
 def get_chat() -> ChatOpenAI:
     if settings.gemini_api_key:
-        return ChatOpenAI(
+        # Native client: keeps Gemini's thought signatures across tool calls.
+        from langchain_google_genai import ChatGoogleGenerativeAI
+
+        return ChatGoogleGenerativeAI(
             model=settings.gemini_chat_model,
-            base_url=settings.gemini_base_url,
-            api_key=settings.gemini_api_key,
+            google_api_key=settings.gemini_api_key,
             temperature=0.2,
-            max_retries=1,
+            max_retries=2,
             timeout=40,
         )
     return ChatOpenAI(
