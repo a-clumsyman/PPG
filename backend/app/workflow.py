@@ -5,7 +5,7 @@ from datetime import timedelta
 
 from fastapi import HTTPException, Request
 
-from .ai import get_chat
+from .ai import get_chat, text_of
 from .config import settings
 from .db import (
     application_events,
@@ -274,7 +274,7 @@ def assist(submission_id: str, body: dict, actor: str) -> dict:
         msg = get_chat().invoke(
             [{"role": "system", "content": system}, {"role": "user", "content": user}]
         )
-        suggestion = (msg.content or "").strip()
+        suggestion = text_of(msg.content)
     except Exception:
         # Deterministic fallback so the demo never breaks without an LLM key.
         suggestion = (
