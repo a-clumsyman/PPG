@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Badge, Button, Card, urgencyTone } from "@/components/ui";
 import { CATEGORIES, CLUSTER_STATUS } from "@/lib/constants";
+import { catLabel, statusLabel, urgLabel, useLanguage, useT, verifLabel } from "@/lib/i18n";
 
 interface SubmissionRow {
   id: string;
@@ -36,27 +37,24 @@ interface ClusterRow {
 type Tab = "entry" | "submissions" | "review" | "clusters";
 
 export default function StaffPage() {
+  const t = useT();
   const [tab, setTab] = useState<Tab>("entry");
+  const tabs: [Tab, string][] = [
+    ["entry", t("staff.tab.entry")],
+    ["submissions", t("staff.tab.submissions")],
+    ["review", t("staff.tab.review")],
+    ["clusters", t("staff.tab.clusters")],
+  ];
 
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">Staff Console</h1>
-        <p className="text-sm text-slate-500">
-          Enter offline complaints, review AI-extracted fields, and manage issue
-          clusters and reports.
-        </p>
+        <h1 className="text-2xl font-bold text-slate-900">{t("staff.title")}</h1>
+        <p className="text-sm text-slate-500">{t("staff.subtitle")}</p>
       </div>
 
       <div className="flex flex-wrap gap-2">
-        {(
-          [
-            ["entry", "Manual Entry"],
-            ["submissions", "Submissions"],
-            ["review", "Review Queue"],
-            ["clusters", "Clusters"],
-          ] as [Tab, string][]
-        ).map(([id, label]) => (
+        {tabs.map(([id, label]) => (
           <button
             key={id}
             onClick={() => setTab(id)}
@@ -80,6 +78,8 @@ export default function StaffPage() {
 }
 
 function ManualEntry() {
+  const t = useT();
+  const { lang } = useLanguage();
   const [text, setText] = useState("");
   const [language, setLanguage] = useState("");
   const [loading, setLoading] = useState(false);
@@ -113,13 +113,13 @@ function ManualEntry() {
     <div className="grid gap-4 lg:grid-cols-2">
       <Card>
         <div className="mb-2 text-sm font-semibold text-slate-900">
-          New complaint from call / WhatsApp / meeting note
+          {t("staff.entryTitle")}
         </div>
         <textarea
           value={text}
           onChange={(e) => setText(e.target.value)}
           rows={6}
-          placeholder='e.g. "Caller from Ward 8 says drainage water has been overflowing near temple for 3 days."'
+          placeholder={t("staff.entryPlaceholder")}
           className="w-full rounded-lg border border-slate-300 p-2 text-sm outline-none focus:border-brand-400"
         />
         <div className="mt-2 flex items-center gap-2">
@@ -128,41 +128,33 @@ function ManualEntry() {
             onChange={(e) => setLanguage(e.target.value)}
             className="rounded-md border border-slate-300 px-2 py-1 text-xs"
           >
-            <option value="">Auto language</option>
+            <option value="">{t("citizen.autoLang")}</option>
             <option value="English">English</option>
-            <option value="Telugu">Telugu</option>
-            <option value="Hindi">Hindi</option>
+            <option value="Telugu">తెలుగు</option>
+            <option value="Hindi">हिन्दी</option>
           </select>
           <Button onClick={submit} disabled={loading}>
-            {loading ? "Structuring..." : "Structure & Save"}
+            {loading ? t("staff.structuring") : t("staff.structure")}
           </Button>
         </div>
       </Card>
 
       <Card>
         <div className="mb-2 text-sm font-semibold text-slate-900">
-          AI-extracted result
+          {t("staff.aiResult")}
         </div>
-        {!result && (
-          <p className="text-sm text-slate-400">
-            The structured fields, tracking ID and suggested cluster will appear
-            here.
-          </p>
-        )}
+        {!result && <p className="text-sm text-slate-400">{t("staff.aiEmpty")}</p>}
         {parsed && (
           <div className="space-y-2 text-sm">
-            <Row label="Tracking ID" value={String(result?.tracking_id)} />
-            <Row label="Category" value={parsed.category} />
-            <Row label="Secondary" value={parsed.secondary_category} />
-            <Row label="Urgency" value={parsed.urgency} />
-            <Row label="Summary" value={parsed.summary} />
-            <Row label="Cluster" value={String(result?.cluster_title)} />
-            <Row
-              label="Cluster action"
-              value={String(result?.cluster_action)}
-            />
+            <Row label={t("staff.f.trackingId")} value={String(result?.tracking_id)} />
+            <Row label={t("staff.f.category")} value={catLabel(lang, parsed.category)} />
+            <Row label={t("staff.f.secondary")} value={catLabel(lang, parsed.secondary_category)} />
+            <Row label={t("staff.f.urgency")} value={urgLabel(lang, parsed.urgency)} />
+            <Row label={t("staff.f.summary")} value={parsed.summary} />
+            <Row label={t("staff.f.cluster")} value={String(result?.cluster_title)} />
+            <Row label={t("staff.f.clusterAction")} value={String(result?.cluster_action)} />
             {Boolean(result?.needs_review) && (
-              <Badge tone="amber">Flagged for review</Badge>
+              <Badge tone="amber">{t("staff.flagged")}</Badge>
             )}
           </div>
         )}
@@ -181,6 +173,8 @@ function Row({ label, value }: { label: string; value: string }) {
 }
 
 function SubmissionsTable() {
+  const t = useT();
+  const { lang } = useLanguage();
   const [rows, setRows] = useState<SubmissionRow[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -196,19 +190,19 @@ function SubmissionsTable() {
     load();
   }, [load]);
 
-  if (loading) return <Card>Loading submissions...</Card>;
+  if (loading) return <Card>{t("staff.loadingSubs")}</Card>;
 
   return (
     <Card className="overflow-x-auto p-0">
       <table className="w-full text-sm">
         <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
           <tr>
-            <th className="px-3 py-2">Tracking</th>
-            <th className="px-3 py-2">Summary</th>
-            <th className="px-3 py-2">Category</th>
-            <th className="px-3 py-2">Urgency</th>
-            <th className="px-3 py-2">Location</th>
-            <th className="px-3 py-2">Status</th>
+            <th className="px-3 py-2">{t("staff.th.tracking")}</th>
+            <th className="px-3 py-2">{t("staff.th.summary")}</th>
+            <th className="px-3 py-2">{t("staff.th.category")}</th>
+            <th className="px-3 py-2">{t("staff.th.urgency")}</th>
+            <th className="px-3 py-2">{t("staff.th.location")}</th>
+            <th className="px-3 py-2">{t("staff.th.status")}</th>
           </tr>
         </thead>
         <tbody>
@@ -217,29 +211,33 @@ function SubmissionsTable() {
               <td className="px-3 py-2 font-mono text-xs">{r.tracking_id}</td>
               <td className="max-w-xs truncate px-3 py-2">{r.summary}</td>
               <td className="px-3 py-2">
-                <Badge tone="blue">{r.category}</Badge>
+                <Badge tone="blue">{catLabel(lang, r.category)}</Badge>
               </td>
               <td className="px-3 py-2">
-                <Badge tone={urgencyTone(r.urgency)}>{r.urgency}</Badge>
+                <Badge tone={urgencyTone(r.urgency)}>{urgLabel(lang, r.urgency)}</Badge>
               </td>
               <td className="px-3 py-2">{r.location || "-"}</td>
               <td className="px-3 py-2">
                 {r.needs_review ? (
-                  <Badge tone="amber">review</Badge>
+                  <Badge tone="amber">{t("staff.tab.review")}</Badge>
                 ) : (
-                  <span className="text-xs text-slate-500">{r.status}</span>
+                  <span className="text-xs text-slate-500">{statusLabel(lang, r.status)}</span>
                 )}
               </td>
             </tr>
           ))}
         </tbody>
       </table>
-      <div className="p-2 text-xs text-slate-400">{rows.length} submissions</div>
+      <div className="p-2 text-xs text-slate-400">
+        {t("staff.subsCount", { n: rows.length })}
+      </div>
     </Card>
   );
 }
 
 function ReviewQueue() {
+  const t = useT();
+  const { lang } = useLanguage();
   const [items, setItems] = useState<
     Array<{
       id: string;
@@ -275,9 +273,8 @@ function ReviewQueue() {
     load();
   }
 
-  if (loading) return <Card>Loading review queue...</Card>;
-  if (!items.length)
-    return <Card>No submissions currently need review.</Card>;
+  if (loading) return <Card>{t("staff.loadingReview")}</Card>;
+  if (!items.length) return <Card>{t("staff.noReview")}</Card>;
 
   return (
     <div className="space-y-3">
@@ -289,14 +286,14 @@ function ReviewQueue() {
                 <span className="font-mono text-xs text-slate-500">
                   {it.tracking_id}
                 </span>
-                <Badge tone="blue">{it.category}</Badge>
-                <Badge tone={urgencyTone(it.urgency)}>{it.urgency}</Badge>
+                <Badge tone="blue">{catLabel(lang, it.category)}</Badge>
+                <Badge tone={urgencyTone(it.urgency)}>{urgLabel(lang, it.urgency)}</Badge>
                 <Badge tone="red">{it.reason.replace(/_/g, " ")}</Badge>
               </div>
               <p className="mt-1 text-sm text-slate-800">{it.summary}</p>
               {it.sensitive_flags.length > 0 && (
                 <p className="mt-1 text-xs text-red-600">
-                  Sensitive: {it.sensitive_flags.join(", ")}
+                  {t("staff.sensitive", { flags: it.sensitive_flags.join(", ") })}
                 </p>
               )}
             </div>
@@ -304,7 +301,7 @@ function ReviewQueue() {
               variant="outline"
               onClick={() => clearReview(it.id, it.category, it.location)}
             >
-              Approve
+              {t("staff.approve")}
             </Button>
           </div>
         </Card>
@@ -314,6 +311,8 @@ function ReviewQueue() {
 }
 
 function ClustersTable() {
+  const t = useT();
+  const { lang } = useLanguage();
   const [rows, setRows] = useState<ClusterRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
@@ -342,10 +341,7 @@ function ClustersTable() {
   }
 
   async function publish(id: string) {
-    const message = window.prompt(
-      "Public update message (anonymized, no personal data):",
-      "This issue has been forwarded to the relevant department for review."
-    );
+    const message = window.prompt(t("staff.publishPrompt"), t("staff.publishDefault"));
     if (!message) return;
     setBusy(id);
     await fetch(`/api/staff/clusters/${id}/publish`, {
@@ -354,10 +350,10 @@ function ClustersTable() {
       body: JSON.stringify({ message }),
     });
     setBusy(null);
-    alert("Public update published.");
+    alert(t("staff.published"));
   }
 
-  if (loading) return <Card>Loading clusters...</Card>;
+  if (loading) return <Card>{t("staff.loadingClusters")}</Card>;
 
   return (
     <div className="space-y-3">
@@ -367,14 +363,18 @@ function ClustersTable() {
             <div>
               <div className="flex items-center gap-2">
                 <span className="font-semibold text-slate-900">{c.title}</span>
-                <Badge tone="blue">{c.category}</Badge>
-                <Badge tone={urgencyTone(c.urgency)}>{c.urgency}</Badge>
-                <Badge tone="purple">score {c.priority_score}</Badge>
+                <Badge tone="blue">{catLabel(lang, c.category)}</Badge>
+                <Badge tone={urgencyTone(c.urgency)}>{urgLabel(lang, c.urgency)}</Badge>
+                <Badge tone="purple">
+                  {t("scene.score", { n: c.priority_score })}
+                </Badge>
               </div>
               <p className="mt-1 text-xs text-slate-500">
-                {c.submission_count} submissions · {c.unique_citizen_count} unique
-                citizens · {c.locations.join(", ") || "no location"} ·{" "}
-                {c.verification_status.replace(/_/g, " ")} · status: {c.status}
+                {c.submission_count} {t("staff.submissionsWord")} ·{" "}
+                {c.unique_citizen_count} {t("staff.uniqueCitizens")} ·{" "}
+                {c.locations.join(", ") || t("staff.noLocation")} ·{" "}
+                {verifLabel(lang, c.verification_status)} · {t("staff.statusWord")}:{" "}
+                {statusLabel(lang, c.status)}
               </p>
             </div>
             <div className="flex flex-wrap gap-1">
@@ -386,7 +386,7 @@ function ClustersTable() {
               >
                 {CLUSTER_STATUS.map((s) => (
                   <option key={s} value={s}>
-                    {s}
+                    {statusLabel(lang, s)}
                   </option>
                 ))}
               </select>
@@ -395,14 +395,16 @@ function ClustersTable() {
                 className="text-xs"
                 onClick={() => publish(c.id)}
               >
-                Publish update
+                {t("staff.publish")}
               </Button>
             </div>
           </div>
         </Card>
       ))}
       <p className="text-xs text-slate-400">
-        Categories tracked: {CATEGORIES.join(", ")}
+        {t("staff.catsTracked", {
+          cats: CATEGORIES.map((c) => catLabel(lang, c)).join(", "),
+        })}
       </p>
     </div>
   );
