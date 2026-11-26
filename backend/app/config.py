@@ -41,6 +41,10 @@ class Settings(BaseSettings):
     default_area_id: str = "CONST_001"
     default_state: str = "Andhra Pradesh"
 
+    # Officer login for the workflow desk (demo credentials, override in .env).
+    officer_username: str = "officer"
+    officer_password: str = "officer123"
+
 
 @lru_cache
 def get_settings() -> Settings:

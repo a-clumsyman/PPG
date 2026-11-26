@@ -75,6 +75,14 @@ def tool_call_logs() -> Collection:
     return get_db()["toolcalllogs"]
 
 
+def application_events() -> Collection:
+    return get_db()["applicationevents"]
+
+
+def sessions() -> Collection:
+    return get_db()["sessions"]
+
+
 def oid(value: Any) -> ObjectId:
     """Coerce a value to an ObjectId."""
     return value if isinstance(value, ObjectId) else ObjectId(str(value))

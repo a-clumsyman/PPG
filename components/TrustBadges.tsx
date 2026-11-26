@@ -1,4 +1,7 @@
+"use client";
+
 import { Badge } from "./ui";
+import { useT } from "@/lib/i18n";
 
 /**
  * Section 24.3 - AI trust rules. Surfaces confidence, data used, verification
@@ -13,16 +16,19 @@ export function TrustBadges({
   dataUsed?: string[];
   limitations?: string[];
 }) {
+  const t = useT();
   const tone =
     confidence === "high" ? "green" : confidence === "medium" ? "amber" : "red";
   return (
     <div className="mt-3 space-y-2 border-t border-slate-100 pt-3 text-xs text-slate-500">
       <div className="flex flex-wrap items-center gap-2">
         {confidence && (
-          <Badge tone={tone}>Confidence: {confidence}</Badge>
+          <Badge tone={tone}>
+            {t("trust.confidence", { level: t("trust." + confidence) })}
+          </Badge>
         )}
         {dataUsed && dataUsed.length > 0 && (
-          <Badge tone="blue">Data used: {dataUsed.length} source(s)</Badge>
+          <Badge tone="blue">{t("trust.dataUsed", { n: dataUsed.length })}</Badge>
         )}
       </div>
       {limitations && limitations.length > 0 && (
@@ -37,10 +43,11 @@ export function TrustBadges({
 }
 
 export function VerificationBadge({ status }: { status: string }) {
+  const t = useT();
   const map: Record<string, { tone: string; label: string }> = {
-    staff_verified: { tone: "green", label: "Staff verified" },
-    unverified: { tone: "amber", label: "Unverified (AI-grouped)" },
-    disputed: { tone: "red", label: "Disputed" },
+    staff_verified: { tone: "green", label: t("trust.staffVerified") },
+    unverified: { tone: "amber", label: t("trust.unverified") },
+    disputed: { tone: "red", label: t("trust.disputed") },
   };
   const v = map[status] || map.unverified;
   return <Badge tone={v.tone}>{v.label}</Badge>;

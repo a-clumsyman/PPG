@@ -1,12 +1,13 @@
 from __future__ import annotations
 
-from fastapi import Body, FastAPI, Query
+from fastapi import Body, Depends, FastAPI, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 
 from . import services
 from .actions import publish_public_update, update_issue_status
 from .agents import run_citizen_agent, run_mp_agent
 from .db import jsonify, reports
+from . import workflow
 from .scenes import (
     generate_report,
     get_issue_scene,
@@ -164,6 +165,39 @@ def staff_submission_edit(submission_id: str, body: dict = Body(default={})) -> 
 
 
 # -------------------------------- Public -------------------------------
+
+
+# ------------------------------- Officer workflow -------------------------------
+
+
+@app.post("/api/auth/login")
+def auth_login(body: dict = Body(default={})) -> dict:
+    return workflow.login(body)
+
+
+@app.get("/api/workflow/queue")
+def workflow_queue(actor: str = Depends(workflow.require_officer)) -> dict:
+    return workflow.workflow_queue(actor)
+
+
+@app.get("/api/workflow/applications/{submission_id}")
+def workflow_application(submission_id: str, actor: str = Depends(workflow.require_officer)) -> dict:
+    return workflow.workflow_application(submission_id, actor)
+
+
+@app.post("/api/workflow/applications/{submission_id}/advance")
+def workflow_advance(submission_id: str, body: dict = Body(default={}), actor: str = Depends(workflow.require_officer)) -> dict:
+    return workflow.advance(submission_id, body, actor)
+
+
+@app.post("/api/workflow/applications/{submission_id}/decision")
+def workflow_decide(submission_id: str, body: dict = Body(default={}), actor: str = Depends(workflow.require_officer)) -> dict:
+    return workflow.decide(submission_id, body, actor)
+
+
+@app.post("/api/workflow/applications/{submission_id}/assist")
+def workflow_assist(submission_id: str, body: dict = Body(default={}), actor: str = Depends(workflow.require_officer)) -> dict:
+    return workflow.assist(submission_id, body, actor)
 
 
 @app.get("/api/public/issues")

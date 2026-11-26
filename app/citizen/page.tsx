@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { Badge, Button, Card } from "@/components/ui";
+import { useT } from "@/lib/i18n";
 
 interface ChatMessage {
   role: "user" | "assistant";
@@ -30,12 +31,9 @@ interface ApiResult {
 }
 
 export default function CitizenPage() {
+  const t = useT();
   const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      role: "assistant",
-      content:
-        "Namaste. Please describe your issue in your own language (English, Telugu or Hindi). For example: water, road, drainage, streetlight, pension, health or school problems.",
-    },
+    { role: "assistant", content: t("citizen.greeting") },
   ]);
   const [input, setInput] = useState("");
   const [language, setLanguage] = useState<string>("");
@@ -68,7 +66,7 @@ export default function CitizenPage() {
     } catch {
       setMessages((m) => [
         ...m,
-        { role: "assistant", content: "Sorry, something went wrong. Please try again." },
+        { role: "assistant", content: t("citizen.error") },
       ]);
     } finally {
       setLoading(false);
@@ -90,12 +88,10 @@ export default function CitizenPage() {
     <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
       <div className="space-y-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Report an Issue</h1>
-          <p className="text-sm text-slate-500">
-            Your issue will be recorded, grouped with similar local issues, and
-            made visible to the MP office. We will also suggest next steps. This
-            does not replace official grievance systems.
-          </p>
+          <h1 className="text-2xl font-bold text-slate-900">
+            {t("citizen.title")}
+          </h1>
+          <p className="text-sm text-slate-500">{t("citizen.subtitle")}</p>
         </div>
 
         <Card className="flex h-[520px] flex-col p-0">
@@ -119,7 +115,7 @@ export default function CitizenPage() {
               </div>
             ))}
             {loading && (
-              <div className="text-xs text-slate-400">Agent is thinking...</div>
+              <div className="text-xs text-slate-400">{t("citizen.thinking")}</div>
             )}
             <div ref={endRef} />
           </div>
@@ -131,18 +127,18 @@ export default function CitizenPage() {
                 onChange={(e) => setLanguage(e.target.value)}
                 className="rounded-md border border-slate-300 px-2 py-1 text-xs"
               >
-                <option value="">Auto language</option>
+                <option value="">{t("citizen.autoLang")}</option>
                 <option value="English">English</option>
-                <option value="Telugu">Telugu</option>
-                <option value="Hindi">Hindi</option>
+                <option value="Telugu">తెలుగు</option>
+                <option value="Hindi">हिन्दी</option>
               </select>
               <Button variant="outline" onClick={useLocation} className="text-xs">
-                Share my location
+                {t("citizen.shareLoc")}
               </Button>
               <input
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
-                placeholder="or type area / landmark"
+                placeholder={t("citizen.orArea")}
                 className="flex-1 rounded-md border border-slate-300 px-2 py-1 text-xs"
               />
               <Button
@@ -150,7 +146,7 @@ export default function CitizenPage() {
                 className="text-xs"
                 onClick={() => location.trim() && send(location.trim())}
               >
-                Send location
+                {t("citizen.sendLoc")}
               </Button>
             </div>
             <form
@@ -163,11 +159,11 @@ export default function CitizenPage() {
               <input
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder="Describe your issue..."
+                placeholder={t("citizen.placeholder")}
                 className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-brand-400"
               />
               <Button type="submit" disabled={loading}>
-                Send
+                {t("citizen.send")}
               </Button>
             </form>
           </div>
@@ -178,19 +174,23 @@ export default function CitizenPage() {
         {result?.submission && (
           <Card className="border-brand-200 bg-brand-50">
             <div className="text-xs font-medium uppercase text-brand-700">
-              Tracking ID
+              {t("citizen.trackingId")}
             </div>
             <div className="mt-1 text-2xl font-bold text-brand-800">
               {result.submission.tracking_id}
             </div>
             <p className="mt-2 text-sm text-slate-600">
               {result.submission.cluster_action === "attached_to_existing"
-                ? `Added to existing cluster: ${result.submission.cluster_title}`
-                : `Started a new cluster: ${result.submission.cluster_title}`}
+                ? t("citizen.addedToCluster", {
+                    title: result.submission.cluster_title,
+                  })
+                : t("citizen.newCluster", {
+                    title: result.submission.cluster_title,
+                  })}
             </p>
             {result.submission.needs_review && (
               <p className="mt-2 text-xs text-amber-700">
-                Sent to MP office staff for review.
+                {t("citizen.sentForReview")}
               </p>
             )}
           </Card>
@@ -199,7 +199,7 @@ export default function CitizenPage() {
         {result?.guidance && result.guidance.length > 0 && (
           <Card>
             <div className="mb-2 text-sm font-semibold text-slate-900">
-              What you can do next
+              {t("citizen.nextSteps")}
             </div>
             <div className="space-y-3">
               {result.guidance.map((g, i) => (
@@ -218,7 +218,7 @@ export default function CitizenPage() {
                       rel="noreferrer"
                       className="mt-1 inline-block text-xs font-medium text-brand-600"
                     >
-                      Official link &rarr;
+                      {t("citizen.officialLink")}
                     </a>
                   )}
                 </div>
@@ -234,14 +234,10 @@ export default function CitizenPage() {
 
         <Card className="bg-slate-50">
           <div className="text-xs font-semibold text-slate-600">
-            Try these examples
+            {t("citizen.tryExamples")}
           </div>
           <div className="mt-2 space-y-1">
-            {[
-              "Water has not come in our colony for five days near the old school",
-              "Drainage water is overflowing near the temple in Ward 8",
-              "My old age pension has not come for two months",
-            ].map((ex) => (
+            {[t("citizen.ex1"), t("citizen.ex2"), t("citizen.ex3")].map((ex) => (
               <button
                 key={ex}
                 onClick={() => send(ex)}

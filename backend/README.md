@@ -5,7 +5,7 @@ TypeScript API routes. The Next.js frontend proxies `/api/*` to this service via
 a rewrite in `next.config.js`.
 
 - **LLM / tool-calling:** Hugging Face Inference Providers (OpenAI-compatible
-  router at `https://router.huggingface.co/v1`), model `deepseek-ai/DeepSeek-V3-0324`
+  router at `https://router.huggingface.co/v1`), model `openai/gpt-oss-120b:groq` (configurable via CHAT_MODEL)
 - **Embeddings:** local `sentence-transformers` (`intfloat/multilingual-e5-large`,
   1024-dim) — no API/token required, runs on CPU
 - **Vector search:** MongoDB Atlas `$vectorSearch` (`cluster_vector_index`,
@@ -17,9 +17,9 @@ Config is read from the repo-root `.env` (via `../.env`): `MONGODB_URI`,
 Providers" permission), `HF_BASE_URL`, `CHAT_MODEL`, `EMBEDDING_MODEL`,
 `EMBEDDING_DIM`.
 
-> Note: NVIDIA's `deepseek-v4-flash` isn't available on HF (DeepSeek only
-> publishes the raw V4 weights there; no provider serves it). `DeepSeek-V3-0324`
-> is the closest tool-calling model actually served by HF Inference Providers.
+> The chat model is pinned to a Groq-served model for low, consistent
+> tool-calling latency; any tool-calling model on HF Inference Providers works
+> via CHAT_MODEL.
 
 ## Setup
 

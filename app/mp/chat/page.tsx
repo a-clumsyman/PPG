@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { Badge, Button, Card, urgencyTone } from "@/components/ui";
 import { TrustBadges } from "@/components/TrustBadges";
+import { trendLabel, urgLabel, useLanguage, useT } from "@/lib/i18n";
 
 interface Priority {
   rank: number;
@@ -29,30 +30,27 @@ interface Turn {
   scenes?: Scene[];
 }
 
-const SUGGESTED = [
-  "What are the top issues this week?",
-  "Why is water shortage ranked first?",
-  "What is happening in Ward 8?",
-  "Show me the map of water issues",
-  "Generate a report for tomorrow's review",
-];
-
 export default function MpChatPage() {
+  const t = useT();
   const [turns, setTurns] = useState<Turn[]>([
-    {
-      role: "assistant",
-      content:
-        "Ask me about constituency priorities, specific areas, trends, or request a report. I answer from recorded issue data and show my confidence and sources.",
-    },
+    { role: "assistant", content: t("mpchat.greeting") },
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
 
+  const suggested = [
+    t("mpchat.sug1"),
+    t("mpchat.sug2"),
+    t("mpchat.sug3"),
+    t("mpchat.sug4"),
+    t("mpchat.sug5"),
+  ];
+
   async function ask(text: string) {
     if (!text.trim() || loading) return;
-    setTurns((t) => [...t, { role: "user", content: text }]);
+    setTurns((tr) => [...tr, { role: "user", content: text }]);
     setInput("");
     setLoading(true);
     try {
@@ -67,8 +65,8 @@ export default function MpChatPage() {
       });
       const data = await res.json();
       setConversationId(data.conversation_id);
-      setTurns((t) => [
-        ...t,
+      setTurns((tr) => [
+        ...tr,
         {
           role: "assistant",
           content: data.answer,
@@ -79,9 +77,9 @@ export default function MpChatPage() {
         },
       ]);
     } catch {
-      setTurns((t) => [
-        ...t,
-        { role: "assistant", content: "Something went wrong. Please try again." },
+      setTurns((tr) => [
+        ...tr,
+        { role: "assistant", content: t("mpchat.error") },
       ]);
     } finally {
       setLoading(false);
@@ -93,43 +91,41 @@ export default function MpChatPage() {
     <div className="grid gap-6 lg:grid-cols-[1fr_300px]">
       <div className="space-y-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">
-            MP Chat Intelligence
-          </h1>
-          <p className="text-sm text-slate-500">
-            Evidence-backed answers over the constituency knowledge base.
-          </p>
+          <h1 className="text-2xl font-bold text-slate-900">{t("mpchat.title")}</h1>
+          <p className="text-sm text-slate-500">{t("mpchat.subtitle")}</p>
         </div>
 
         <div className="space-y-4">
-          {turns.map((t, i) => (
+          {turns.map((turn, i) => (
             <div key={i}>
-              {t.role === "user" ? (
+              {turn.role === "user" ? (
                 <div className="flex justify-end">
                   <div className="max-w-[80%] rounded-2xl rounded-br-sm bg-brand-600 px-3 py-2 text-sm text-white">
-                    {t.content}
+                    {turn.content}
                   </div>
                 </div>
               ) : (
                 <Card>
                   <div className="whitespace-pre-wrap text-sm text-slate-800">
-                    {t.content}
+                    {turn.content}
                   </div>
-                  {t.scenes?.map((s, si) => (
+                  {turn.scenes?.map((s, si) => (
                     <SceneCard key={si} scene={s} />
                   ))}
-                  {(t.confidence || t.limitations) && (
+                  {(turn.confidence || turn.limitations) && (
                     <TrustBadges
-                      confidence={t.confidence}
-                      dataUsed={t.dataUsed}
-                      limitations={t.limitations}
+                      confidence={turn.confidence}
+                      dataUsed={turn.dataUsed}
+                      limitations={turn.limitations}
                     />
                   )}
                 </Card>
               )}
             </div>
           ))}
-          {loading && <div className="text-xs text-slate-400">Thinking...</div>}
+          {loading && (
+            <div className="text-xs text-slate-400">{t("mpchat.thinking")}</div>
+          )}
           <div ref={endRef} />
         </div>
 
@@ -143,11 +139,11 @@ export default function MpChatPage() {
           <input
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Ask about priorities, areas, trends, or reports..."
+            placeholder={t("mpchat.placeholder")}
             className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-brand-400"
           />
           <Button type="submit" disabled={loading}>
-            Ask
+            {t("mpchat.ask")}
           </Button>
         </form>
       </div>
@@ -155,10 +151,10 @@ export default function MpChatPage() {
       <div>
         <Card className="bg-slate-50">
           <div className="text-xs font-semibold text-slate-600">
-            Suggested questions
+            {t("mpchat.suggested")}
           </div>
           <div className="mt-2 space-y-1">
-            {SUGGESTED.map((q) => (
+            {suggested.map((q) => (
               <button
                 key={q}
                 onClick={() => ask(q)}
@@ -175,6 +171,9 @@ export default function MpChatPage() {
 }
 
 function SceneCard({ scene }: { scene: Scene }) {
+  const t = useT();
+  const { lang } = useLanguage();
+
   if (scene.scene_type === "priority_scene") {
     const priorities = (scene.priorities as Priority[]) || [];
     if (!priorities.length) return null;
@@ -190,11 +189,12 @@ function SceneCard({ scene }: { scene: Scene }) {
                 {p.rank}. {p.title}
               </span>
               <div className="text-xs text-slate-500">
-                {p.submission_count} submissions · {p.location} · {p.trend}
+                {p.submission_count} {t("scene.submissions")} · {p.location} ·{" "}
+                {trendLabel(lang, p.trend)}
               </div>
             </div>
             <div className="flex items-center gap-1">
-              <Badge tone={urgencyTone(p.urgency)}>{p.urgency}</Badge>
+              <Badge tone={urgencyTone(p.urgency)}>{urgLabel(lang, p.urgency)}</Badge>
               <Badge tone="purple">{p.priority_score}</Badge>
             </div>
           </div>
@@ -214,10 +214,16 @@ function SceneCard({ scene }: { scene: Scene }) {
       <div className="mt-3 rounded-lg border border-slate-100 bg-slate-50 p-3 text-xs text-slate-600">
         <div className="font-medium text-slate-800">{String(scene.title)}</div>
         <div className="mt-1 flex flex-wrap gap-2">
-          <span>{metrics.submissions} submissions</span>
-          <span>· {metrics.unique_citizens} unique citizens</span>
-          <span>· {metrics.photos} photos</span>
-          <span>· score {metrics.priority_score}</span>
+          <span>
+            {metrics.submissions} {t("scene.submissions")}
+          </span>
+          <span>
+            · {metrics.unique_citizens} {t("scene.uniqueCitizens")}
+          </span>
+          <span>
+            · {metrics.photos} {t("scene.photos")}
+          </span>
+          <span>· {t("scene.score", { n: metrics.priority_score })}</span>
         </div>
       </div>
     );
@@ -250,8 +256,7 @@ function SceneCard({ scene }: { scene: Scene }) {
     const points = (scene.points as unknown[]) || [];
     return (
       <div className="mt-3 text-xs text-slate-500">
-        Map scene ready with {points.length} hotspot points. See the MP Dashboard
-        for the full heatmap.
+        {t("scene.mapReady", { n: points.length })}
       </div>
     );
   }
