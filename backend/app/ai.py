@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import math
 from functools import lru_cache
 
+import httpx
 from huggingface_hub import InferenceClient
 from langchain_openai import ChatOpenAI
 
@@ -21,6 +23,15 @@ from .db import issue_clusters, guidance_resources
 
 @lru_cache
 def get_chat() -> ChatOpenAI:
+    if settings.gemini_api_key:
+        return ChatOpenAI(
+            model=settings.gemini_chat_model,
+            base_url=settings.gemini_base_url,
+            api_key=settings.gemini_api_key,
+            temperature=0.2,
+            max_retries=1,
+            timeout=40,
+        )
     return ChatOpenAI(
         model=settings.chat_model,
         base_url=settings.hf_base_url,
@@ -36,8 +47,28 @@ def _embed_client() -> InferenceClient:
     return InferenceClient(token=settings.hf_token)
 
 
+def _gemini_embed(text: str, task: str) -> list[float]:
+    """Gemini embedding cut to embedding_dim and unit-normalised for cosine search."""
+    r = httpx.post(
+        f"https://generativelanguage.googleapis.com/v1beta/models/{settings.gemini_embedding_model}:embedContent",
+        headers={"x-goog-api-key": settings.gemini_api_key},
+        json={
+            "content": {"parts": [{"text": text[:8000]}]},
+            "taskType": task,
+            "outputDimensionality": settings.embedding_dim,
+        },
+        timeout=30,
+    )
+    r.raise_for_status()
+    vec = r.json()["embedding"]["values"]
+    norm = math.sqrt(sum(v * v for v in vec)) or 1.0
+    return [v / norm for v in vec]
+
+
 def embed_passage(text: str) -> list[float]:
     """Embed a stored document. e5 models require a 'passage:' prefix."""
+    if settings.gemini_api_key:
+        return _gemini_embed(text, "RETRIEVAL_DOCUMENT")
     vec = _embed_client().feature_extraction(
         f"passage: {text[:8000]}", model=settings.embedding_model
     )
@@ -46,6 +77,8 @@ def embed_passage(text: str) -> list[float]:
 
 def embed_query(text: str) -> list[float]:
     """Embed a search query. e5 models require a 'query:' prefix."""
+    if settings.gemini_api_key:
+        return _gemini_embed(text, "RETRIEVAL_QUERY")
     vec = _embed_client().feature_extraction(
         f"query: {text[:8000]}", model=settings.embedding_model
     )
